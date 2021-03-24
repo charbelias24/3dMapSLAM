@@ -43,18 +43,36 @@ find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 message("Eigen path ${Eigen3_DIR}")
 message("Eigen version ${Eigen3_VERSION}")
+
+# adding for point cloud viewer and mapper
+find_package( PCL 1.7 REQUIRED )
+find_package(catkin REQUIRED COMPONENTS 
+  roscpp
+  sensor_msgs
+  message_generation
+  tf
+  )
+
+find_package( octomap REQUIRED )
+
 include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/../../../
 ${PROJECT_SOURCE_DIR}/../../../include
 ${PROJECT_SOURCE_DIR}/../../../include/CameraModels
 ${Pangolin_INCLUDE_DIRS}
+${PCL_INCLUDE_DIRS}
+${catkin_INCLUDE_DIRS}
+${OCTOMAP_INCLUDE_DIRS}
 )
 
 set(LIBS 
 ${OpenCV_LIBS} 
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
+${PCL_LIBRARIES}
+${OCTOMAP_LIBRARIES}
+${catkin_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/../../../Thirdparty/DBoW2/lib/libDBoW2.so
 ${PROJECT_SOURCE_DIR}/../../../Thirdparty/g2o/lib/libg2o.so
 ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM3.so

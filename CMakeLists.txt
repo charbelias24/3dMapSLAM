@@ -47,12 +47,23 @@ MESSAGE(${OpenCV_VERSION})
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 
+# adding for point cloud viewer and mapper
+find_package( PCL 1.7 REQUIRED )
+find_package(catkin REQUIRED COMPONENTS 
+  roscpp
+  sensor_msgs
+  message_generation
+  tf
+  )
+
 include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
 ${PROJECT_SOURCE_DIR}/include/CameraModels
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
+${PCL_INCLUDE_DIRS}
+${catkin_INCLUDE_DIRS}
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -74,6 +85,7 @@ src/MapDrawer.cc
 src/Optimizer.cc
 src/PnPsolver.cc
 src/Frame.cc
+src/PointCloudMapping.cc
 src/KeyFrameDatabase.cc
 src/Sim3Solver.cc
 src/Initializer.cc
@@ -100,6 +112,7 @@ include/MapDrawer.h
 include/Optimizer.h
 include/PnPsolver.h
 include/Frame.h
+include/PointCloudMapping.h
 include/KeyFrameDatabase.h
 include/Sim3Solver.h
 include/Initializer.h
@@ -120,9 +133,12 @@ target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
+${PCL_LIBRARIES}
+${catkin_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 -lboost_serialization
+-lboost_system
 -lcrypto
 )
 
