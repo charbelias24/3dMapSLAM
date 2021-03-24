@@ -37,11 +37,16 @@
 #include "MapDrawer.h"
 #include "System.h"
 #include "ImuTypes.h"
+#include "PointCloudMapping.h"
 
 #include "GeometricCamera.h"
 
+#include "boost/make_shared.hpp"
+
 #include <mutex>
 #include <unordered_set>
+
+class PointCloudMapping;
 
 namespace ORB_SLAM3
 {
@@ -58,7 +63,7 @@ class Tracking
 
 public:
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
-             KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const string &_nameSeq=std::string());
+               boost::shared_ptr<PointCloudMapping> pPointCloud, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const string &_nameSeq=std::string());
 
     ~Tracking();
 
@@ -124,6 +129,9 @@ public:
     Frame mLastFrame;
 
     cv::Mat mImGray;
+    cv::Mat mImDepth; // added to realize pointcloud view
+    cv::Mat mImRGB; // added for color point map 
+
 
     // Initialization Variables (Monocular)
     std::vector<int> mvIniLastMatches;
@@ -309,6 +317,10 @@ protected:
     bool mbRGB;
 
     list<MapPoint*> mlpTemporalPoints;
+
+    // For point cloud viewing
+    boost::shared_ptr<PointCloudMapping> mpPointCloudMapping;
+
 
     //int nMapChangeIndex;
 

@@ -34,6 +34,14 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
 
+#include "PointCloudMapping.h"
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/common/projection_matrix.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/common/transforms.h>
+#include <pcl/io/pcd_io.h>
+
+
 namespace ORB_SLAM3
 {
 
@@ -73,6 +81,9 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
        exit(-1);
     }
 
+    // For point cloud resolution
+    float resolution = fsSettings["PointCloudMapping.Resolution"];
+
     bool loadedAtlas = false;
 
     //----
@@ -80,7 +91,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
 
     mpVocabulary = new ORBVocabulary();
-    bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
+    bool bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
     if(!bVocLoad)
     {
         cerr << "Wrong path to vocabulary. " << endl;
@@ -171,11 +182,14 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpFrameDrawer = new FrameDrawer(mpAtlas);
     mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile);
 
+	// Initialize pointcloud mapping
+    mpPointCloudMapping = boost::make_shared<PointCloudMapping>( resolution );
+
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     cout << "Seq. Name: " << strSequence << endl;
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
-                             mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, strSequence);
+                             mpAtlas, mpPointCloudMapping, mpKeyFrameDatabase, strSettingsFile, mSensor, strSequence);
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO, strSequence);
