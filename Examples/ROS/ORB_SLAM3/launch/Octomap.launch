@@ -12,14 +12,14 @@
 		
 		<param name="frame_id" type="string" value="/map" />
 		
-		<param name="sensor_model/max_range" value="5.0" />
+		<param name="sensor_model/max_range" value="100.0" />
 		
 		<remap from="cloud_in" to="/slam_pointclouds" />
 		
 		<param name="pointcloud_min_z" type="double" value="0.0" />
-		<param name="pointcloud_max_z" type="double" value="5" />
+		<param name="pointcloud_max_z" type="double" value="100" />
 		<param name="occupancy_min_z" type="double" value="0.0" />
-		<param name="occupancy_max_z" type="double" value="5" />
+		<param name="occupancy_max_z" type="double" value="100" />
 		<param name="height_map" type="bool" value="False" />
 		
 	
