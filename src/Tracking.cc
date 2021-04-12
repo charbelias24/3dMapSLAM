@@ -910,6 +910,7 @@ void Tracking::SetStepByStep(bool bSet)
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp, string filename)
 {
+    mImRGB = imRectLeft;
     mImGray = imRectLeft;
     cv::Mat imGrayRight = imRectRight;
     mImRight = imRectRight;
@@ -953,6 +954,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
+    mImDepth = cv::Mat(mCurrentFrame.mvDepth);
 
     Track();
 
@@ -2912,6 +2914,15 @@ void Tracking::CreateNewKeyFrame()
     cout << "Depth mat type " << mImDepth.type() << endl;
     cout << "DepthMapFactor" << mDepthMapFactor << endl;  
     cout << "BEFORE +++ (" << minT << ", " << maxT << ") "; 
+
+    cv::minMaxIdx(this->mImRGB, &minT, &maxT);
+
+
+    cout << "Color mat type " << mImRGB.type() << endl;
+    cout << "Color mat size " << mImRGB.size() << endl;
+    cout << "Color mat channels " << mImRGB.channels() << endl;
+    cout << "Color +++ (" << minT << ", " << maxT << ") "; 
+
 
 	// insert Key Frame into point cloud viewer
     mpPointCloudMapping->insertKeyFrame( pKF, this->mImRGB, this->mImDepth );

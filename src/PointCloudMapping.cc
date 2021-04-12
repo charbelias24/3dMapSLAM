@@ -49,8 +49,8 @@ PointCloudMapping::PointCloudMapping(double resolution_)
 {
     this->resolution = resolution_;
     voxel.setLeafSize( resolution, resolution, resolution);
-    this->sor.setMeanK(50);                                
-    this->sor.setStddevMulThresh(1.0);                    
+    this->sor.setMeanK(100);                                
+    this->sor.setStddevMulThresh(0.1);                    
     globalMap = boost::make_shared< PointCloud >( );
     KfMap = boost::make_shared< PointCloud >( );
     viewerThread = boost::make_shared<thread>( bind(&PointCloudMapping::viewer, this ) );
@@ -87,19 +87,21 @@ pcl::PointCloud< PointCloudMapping::PointT >::Ptr PointCloudMapping::generatePoi
         for ( int n=0; n<depth.cols; n+=1)
         {
             float d = depth.ptr<float>(m)[n];
-            if (d < 0.01 || d > 4.0)
+            if (d < 0.01 || d > 9.0)
                 continue;
 
             PointT p;
             p.z = d;
-            p.x = ( n - kf->cx) * p.z / kf->fx;
-            p.y = ( m - kf->cy) * p.z / kf->fy;
+            p.x = ( n - kf->cx) * d / kf->fx;
+            p.y = ( m - kf->cy) * d / kf->fy;
 
             // Deal with color
-            p.b = color.ptr<uchar>(m)[n*3];
-            p.g = color.ptr<uchar>(m)[n*3+1];
-            p.r = color.ptr<uchar>(m)[n*3+2];
-
+            p.b = color.ptr<uchar>(m)[n*color.channels()];
+            p.g = color.ptr<uchar>(m)[n*color.channels()+1];
+            p.r = color.ptr<uchar>(m)[n*color.channels()+2];
+            if (color.channels() == 4)
+                p.a = color.ptr<uchar>(m)[n*color.channels()+3];
+            
             tmp->points.push_back(p);
         }
     }
@@ -163,6 +165,7 @@ void PointCloudMapping::viewer()
 	    Cloud_transform(pcl_cloud_kf,pcl_filter);
 	    pcl::toROSMsg(pcl_filter, pcl_point);
 	    pcl_point.header.frame_id = "/pointCloud";
+        
 	    pclPoint_pub.publish(pcl_point);
         lastKeyframeSize = N;
 	    cout << "[PCL] Keyframe map publish time ="<<endl;
