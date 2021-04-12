@@ -7,6 +7,7 @@
   www.ros.org/wiki/octomap_server for details  
 -->
 <launch>	
-	<node pkg="tf" type="static_transform_publisher" name="map" args="0.195 -0.095 0.9 0 0 0 /map /pointCloud 70" >
-	</node>​
+	<node pkg="tf" type="static_transform_publisher" name="map" args="0.195 -0.095 0.9 0 0 0 /map /pointCloud 70" > </node>
+	<node pkg="tf" type="static_transform_publisher" name="base_map" args="0.195 -0.095 0.9 0 0 0 /map /base_footprint 70" > </node>
+  ​
 </launch>
