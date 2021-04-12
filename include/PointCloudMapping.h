@@ -84,7 +84,7 @@ protected:
     std::mutex                   keyframeMutex;
     uint16_t                lastKeyframeSize =0;
 
-    double resolution = 0.001;
+    double resolution = 0.005;
     pcl::VoxelGrid<PointT>  voxel;
     pcl::StatisticalOutlierRemoval<PointT> sor;
 };
