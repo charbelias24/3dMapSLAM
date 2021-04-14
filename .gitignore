@@ -53,3 +53,4 @@ cmake-build-debug/
 *.vscode
 *.bag
 
+__pycache__/
