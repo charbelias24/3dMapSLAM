@@ -1,7 +1,9 @@
 <launch>  
+	<!-- FrameSegmentation -->
+	<node pkg="pointcloud_segmentation" name="image_segmentation" type="image_segmentation.py" output="screen" />
 
 	<!-- orb slam  -->
-	<node pkg="ORB_SLAM3" name="ORB_SLAM3" type="RGBD"  args="$(find ORB_SLAM3)/../../../Vocabulary/ORBvoc.bin /home/visualbehavior/Documents/ZED/params/stereo/zed2.yaml  /camera/rgb/image_raw:=/zed2/zed_node/rgb/image_rect_color /camera/depth_registered/image_raw:=/zed2/zed_node/depth/depth_registered" output="screen" />
+	<node pkg="ORB_SLAM3" name="ORB_SLAM3" type="RGBD" args="$(find ORB_SLAM3)/../../../Vocabulary/ORBvoc.bin /home/visualbehavior/Documents/ZED/params/stereo/zed2.yaml  /camera/rgb/image_raw:=/zed2/zed_node/rgb/image_rect_color /camera/depth_registered/image_raw:=/zed2/zed_node/depth/depth_registered" output="screen" />
 
 	<!-- Run other launch file -->
     <include file="$(find ORB_SLAM3)/launch/Octomap.launch" />
