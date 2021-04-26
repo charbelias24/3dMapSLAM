@@ -15,7 +15,10 @@ FLOOR_THRESHOLD = 0.55
 BLOCKSIZE = 256
 CLASS_COLOR_MAP = np.random.randint(0, 255, (300, 3))
 CLASS_COLOR_MAP[0] = [238,130,238] # person color
-CLASS_COLOR_MAP[1] = [152,251,152] # floor color
+for i in range(300):
+    CLASS_COLOR_MAP[i] = [238,130,238]
+
+# CLASS_COLOR_MAP[1] = [152,251,152] # floor color
 GPU_CLASS_COLOR_MAP = gpuarray.to_gpu(CLASS_COLOR_MAP.astype(np.uint8)) # uint16 == unsigned short
 
 gpu_channel_avg = gpuarray.to_gpu(np.array([0.485, 0.456, 0.406], dtype = np.float32))
@@ -720,30 +723,30 @@ def cuBbox_to_image(
         
 
     # Go through each bbox
-    for b in range(nbox):
-        # Select the class associated with this bbox
-        class_id = labels[int(b)]
-        # Select the bbox to display
-        # Draw bbox only if it is a person
-        if class_id == 0:
-            x1, y1, x2, y2 = bbox_x1y1x2y2[b]
-            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-            x1, y1, x2, y2 = max(0, x1), max(0, y1), min(image_shape[1], x2), min(image_shape[0], y2)
-            if len(class_name) == 0:
-                label_name = "unknow"    
-            elif scores is not None and len(scores) > 0:
-                label_name = class_name[int(class_id)]   
-                label_name = "%s:%.2f" % (label_name, scores[b])
-            else:
-                label_name = class_name[int(class_id)]    
+    # for b in range(nbox):
+    #     # Select the class associated with this bbox
+    #     class_id = labels[int(b)]
+    #     # Select the bbox to display
+    #     # Draw bbox only if it is a person
+    #     if class_id == 0:
+    #         x1, y1, x2, y2 = bbox_x1y1x2y2[b]
+    #         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+    #         x1, y1, x2, y2 = max(0, x1), max(0, y1), min(image_shape[1], x2), min(image_shape[0], y2)
+    #         if len(class_name) == 0:
+    #             label_name = "unknow"    
+    #         elif scores is not None and len(scores) > 0:
+    #             label_name = class_name[int(class_id)]   
+    #             label_name = "%s:%.2f" % (label_name, scores[b])
+    #         else:
+    #             label_name = class_name[int(class_id)]    
 
-            class_color = CLASS_COLOR_MAP[int(class_id)].astype(np.uint8)
+    #         class_color = CLASS_COLOR_MAP[int(class_id)].astype(np.uint8)
 
-            multiplier = image_shape[0] / 500
+    #         multiplier = image_shape[0] / 500
 
-            cv2.rectangle(image, (x1, y1), (x1 + int(multiplier*15)*len(label_name), y1 + 20), class_color.tolist(), -10)
-            cv2.putText(image, label_name, (x1+2, y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6 * multiplier, (0, 0, 0), 1)
-            cv2.rectangle(image, (x1, y1), (x2, y2), tuple(class_color.tolist()), 2)
+    #         cv2.rectangle(image, (x1, y1), (x1 + int(multiplier*15)*len(label_name), y1 + 20), class_color.tolist(), -10)
+    #         cv2.putText(image, label_name, (x1+2, y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6 * multiplier, (0, 0, 0), 1)
+    #         cv2.rectangle(image, (x1, y1), (x2, y2), tuple(class_color.tolist()), 2)
     return image
 
 
@@ -859,19 +862,28 @@ def cuBbox_to_image_coco(
             device_image_uint8, device_in_img,
             block=blockDim, grid=gridDim, stream=cuda_stream
         )
+        print("Checking display_size 1 ", display_size)
         # == Resize image to the display size
         if display_size is not None:
             blockDimY, blockDimX, blockDimZ = 3, 16, 16
             blockDim = (blockDimX, blockDimY, blockDimZ)
             gridDim = (iDivUp(display_size[1], blockDimX), iDivUp(display_size[0], blockDimY), 1)
+            print("Checking display_size 2 ", display_size)
+
             cuBilinear_resize_image(
                 device_display_img, device_image_uint8, 
                 np.int32(display_size[1]), np.int32(display_size[0]),
                 np.int32(image_shape[1]), np.int32(image_shape[0]), np.int32(image_shape[2]),
                 block=blockDim, grid=gridDim, stream=cuda_stream
             )  
+            print("Checking display_size 3 ", display_size)
+
             cuda.memcpy_dtoh_async(host_display_img, device_display_img, cuda_stream)
+
+            print("Checking display_size 4 ", display_size)
             cuda_stream.synchronize()
+            print("Checking display_size 5 ", display_size)
+
             image = host_display_img.reshape(display_size)
         else:
             cuda.memcpy_dtoh_async(host_image_uint8, device_image_uint8, cuda_stream)
@@ -881,29 +893,29 @@ def cuBbox_to_image_coco(
         image = host_image_uint8.reshape(image_shape)
         
 
-    # Go through each bbox
-    for b in range(nbox):
-        # Select the class associated with this bbox
-        class_id = labels[int(b)]
-        # Select the bbox to display
-        x1, y1, x2, y2 = bbox_x1y1x2y2[b]
-        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-        x1, y1, x2, y2 = max(0, x1), max(0, y1), min(image_shape[1], x2), min(image_shape[0], y2)
-        if len(class_name) == 0:
-            label_name = "unknow"    
-        elif scores is not None and len(scores) > 0:
-            label_name = class_name[int(class_id)]   
-            label_name = "%s:%.2f" % (label_name, scores[b])
-        else:
-            label_name = class_name[int(class_id)]    
+    # # Go through each bbox
+    # for b in range(nbox):
+    #     # Select the class associated with this bbox
+    #     class_id = labels[int(b)]
+    #     # Select the bbox to display
+    #     x1, y1, x2, y2 = bbox_x1y1x2y2[b]
+    #     x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+    #     x1, y1, x2, y2 = max(0, x1), max(0, y1), min(image_shape[1], x2), min(image_shape[0], y2)
+    #     if len(class_name) == 0:
+    #         label_name = "unknow"    
+    #     elif scores is not None and len(scores) > 0:
+    #         label_name = class_name[int(class_id)]   
+    #         label_name = "%s:%.2f" % (label_name, scores[b])
+    #     else:
+    #         label_name = class_name[int(class_id)]    
 
-        class_color = CLASS_COLOR_MAP[int(class_id)].astype(np.uint8)
+    #     class_color = CLASS_COLOR_MAP[int(class_id)].astype(np.uint8)
 
-        multiplier = image_shape[0] / 500
+    #     multiplier = image_shape[0] / 500
 
-        cv2.rectangle(image, (x1, y1), (x1 + int(multiplier*15)*len(label_name), y1 + 20), class_color.tolist(), -10)
-        cv2.putText(image, label_name, (x1+2, y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6 * multiplier, (0, 0, 0), 1)
-        cv2.rectangle(image, (x1, y1), (x2, y2), tuple(class_color.tolist()), 2)
+    #     cv2.rectangle(image, (x1, y1), (x1 + int(multiplier*15)*len(label_name), y1 + 20), class_color.tolist(), -10)
+    #     cv2.putText(image, label_name, (x1+2, y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6 * multiplier, (0, 0, 0), 1)
+    #     cv2.rectangle(image, (x1, y1), (x2, y2), tuple(class_color.tolist()), 2)
     return image
 
 
