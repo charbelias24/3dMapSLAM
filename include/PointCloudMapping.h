@@ -58,30 +58,40 @@ public:
     PointCloudMapping( double resolution_ );
     void Cloud_transform(pcl::PointCloud<pcl::PointXYZRGBA>& source, pcl::PointCloud<pcl::PointXYZRGBA>& out);
     // Inserting a keyframe updates the map once
-    void insertKeyFrame( KeyFrame* kf,cv::Mat& color, cv::Mat& depth );
+    void insertKeyFrame( KeyFrame* kf,cv::Mat& color, cv::Mat& depth, const int seqNum);
     void shutdown();
     void viewer();
+    void imageMaskCallback(const sensor_msgs::ImageConstPtr& msgMask);
     void public_cloud( pcl::PointCloud<pcl::PointXYZRGBA> &cloud_kf);
+    void generateAndPublishPointCloud(size_t N);
 
 protected:
-    PointCloud::Ptr generatePointCloud(KeyFrame* kf, cv::Mat& color, cv::Mat& depth);
+    PointCloud::Ptr generatePointCloud(KeyFrame* kf, cv::Mat& color, cv::Mat& depth, int seqNum);
 
     PointCloud::Ptr globalMap;
 
     PointCloud::Ptr KfMap;
     boost::shared_ptr<thread>  viewerThread;
+    boost::shared_ptr<thread>  maskSubsThread;
+    boost::shared_ptr<thread>  pclThread;
+    std::thread  maskThread;
 
     bool    shutDownFlag    =false;
     std::mutex   shutDownMutex;
 
     std::condition_variable  keyFrameUpdated;
+    std::condition_variable  newMaskArrived;
     std::mutex               keyFrameUpdateMutex;
 
     // Data to generate point clouds
+    std::map<int, cv::Mat>       maskMap;
     std::vector<KeyFrame*>       keyframes;
     std::vector<cv::Mat>         colorImgs;
     std::vector<cv::Mat>         depthImgs;
+    std::vector<cv::Mat>         imgMasks;
+    std::vector<int>             imgMasksSeq;
     std::mutex                   keyframeMutex;
+    std::mutex                   maskMutex;
     uint16_t                lastKeyframeSize =0;
 
     double resolution = 0.005;

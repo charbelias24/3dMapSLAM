@@ -148,6 +148,7 @@ class KeyFrame
         ar & mnId;
         ar & const_cast<long unsigned int&>(mnFrameId);
         ar & const_cast<double&>(mTimeStamp);
+        ar & const_cast<int&>(mSeqNum);
         // Grid
         ar & const_cast<int&>(mnGridCols);
         ar & const_cast<int&>(mnGridRows);
@@ -394,6 +395,7 @@ public:
     const long unsigned int mnFrameId;
 
     const double mTimeStamp;
+    const int mSeqNum;
 
     // Grid (to speed up feature matching)
     const int mnGridCols;

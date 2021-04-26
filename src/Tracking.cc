@@ -982,7 +982,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
 }
 
 
-cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp, string filename)
+cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp, const int &seq, string filename)
 {
     mImGray = imRGB;
     mImDepth = imD;
@@ -1011,7 +1011,7 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const d
 
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
-
+    mCurrentFrame.mSeqNum = seq;
 
     Track();
 
@@ -2923,9 +2923,8 @@ void Tracking::CreateNewKeyFrame()
     cout << "Color mat channels " << mImRGB.channels() << endl;
     cout << "Color +++ (" << minT << ", " << maxT << ") "; 
 
-
 	// insert Key Frame into point cloud viewer
-    mpPointCloudMapping->insertKeyFrame( pKF, this->mImRGB, this->mImDepth );
+    mpPointCloudMapping->insertKeyFrame( pKF, this->mImRGB, this->mImDepth, mCurrentFrame.mSeqNum );
 
     mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKF;
