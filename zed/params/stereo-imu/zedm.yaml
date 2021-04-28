@@ -1,0 +1,157 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+# These are taken from the Camera Information in Python API of ZED
+#--------------------------------------------------------------------------------------------
+Camera.type: "PinHole"
+
+# Camera calibration and distortion parameters (OpenCV) 
+Camera.fx: 677.4461669921875
+Camera.fy: 677.4461669921875
+Camera.cx: 637.6947631835938
+Camera.cy: 363.07525634765625
+
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.k3: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+
+
+Camera.bFishEye: 0
+
+Camera.width: 1280
+Camera.height: 720
+
+# Camera frames per second 
+Camera.fps: 15.0
+
+# stereo baseline in meters times fx
+Camera.bf: 42.679 # 0.06300730 * 677.446
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 1
+
+# Close/Far threshold. Baseline times.
+ThDepth: 45.0
+
+
+# Transformation from camera to body-frame (imu)
+# Taken from ROS after the camera is opened (ROS DEFAULT COORDINATE SYSTEM)
+# Tbc: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: f
+#    data: [0.999920, -0.004341, -0.011889, -0.002000,
+#           0.004631, 0.999689, 0.024500, -0.015000,
+#           0.011779, -0.024553, 0.999629, -0.002000,
+#           0.0, 0.0, 0.0, 1.0]
+
+# Transformation from camera to body-frame (imu)
+# IMAGE COORDINATE FRAME: X RIGHT, Y DOWN, Z FWD
+# Taken from ROS after the camera is opened
+Tbc: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: f
+   data: [0.999689, 0.024500, -0.004631, 0.015000,
+          -0.024553, 0.999629, -0.011779, 0.002000,
+          0.004341, 0.011889, 0.999920, -0.002000,
+          0.000000, 0.000000, 0.000000, 1.000000 ]
+
+#LEFT_HANDED_Z_UP
+# Tbc: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: f
+#    data: [0.999920, 0.004341, -0.011889, -0.002000,
+#          -0.004631, 0.999689, -0.024500, 0.015000,
+#          0.011779, 0.024553, 0.999629, -0.002000,
+#          0.000000, 0.000000, 0.000000, 1.000000]
+
+
+#Right,HANDED,Y,UP,and,Z,BACKWARD
+# Tbc: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: f
+#    data: [0.999689, -0.024500, 0.004631, 0.015000,
+#          0.024553, 0.999629, -0.011779, -0.002000,
+#          -0.004341, 0.011889, 0.999920, 0.002000,
+#          0.000000, 0.000000, 0.000000, 1.000000]
+
+
+#RIGHT_HANDED_Z_UP
+# Tbc: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: f
+#    data: [0.999689, -0.004631, -0.024500, 0.015000,
+#           0.004341, 0.999920, -0.011889, -0.00200,
+#           0.024553, 0.011779, 0.999629, -0.002000,
+#           0.000000, 0.000000, 0.000000, 1.000000]
+         
+#RIGHT_HANDED_Z_UP_X_FWD
+# Tbc: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: f
+#    data: [0.999920, -0.004341, -0.011889, -0.002000,
+#           0.004631, 0.999689, 0.024500, -0.015000,
+#           0.011779, -0.024553, 0.999629, -0.002000,
+#           0.000000, 0.000000, 0.000000, 1.000000]
+
+# # 
+# Tbc: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: f
+#    data: [-0.999629, 0.011779, 0.024553, -0.002000,
+#           -0.011889, -0.999920,-0.004341,  0.002000,
+#           0.024500, -0.004631, 0.999689, 0.015000,
+#           0.000000, 0.000000, 0.000000, 1.000000]
+
+
+
+# IMU noise
+IMU.NoiseGyro: 0.0070000002 #0.007000000216066837
+IMU.NoiseAcc: 0.0018 #0.0017999999690800905 
+IMU.GyroWalk: 0.0019825 #0.0019825000781565905
+IMU.AccWalk: 0.00064350001 #0.0006435000104829669
+IMU.Frequency: 400
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 1500
+
+# ORB Extractor: Scale factor between levels in the scale pyramid 	
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid	
+ORBextractor.nLevels: 8
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast			
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
+
