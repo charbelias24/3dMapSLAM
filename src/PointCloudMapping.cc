@@ -44,7 +44,7 @@
 #include <tf/transform_broadcaster.h>
 #include <boost/thread/thread.hpp>
 #include <boost/chrono.hpp>
-
+#include <tf/transform_broadcaster.h>
 #include <cv_bridge/cv_bridge.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
@@ -53,6 +53,9 @@
 #include <opencv2/core/core.hpp>
 
 using namespace std;
+
+bool transformLocally;
+bool testingTransform;
 
 pcl::PointCloud<pcl::PointXYZRGBA> pcl_filter;
 ros::Publisher pclPoint_pub;
@@ -64,6 +67,8 @@ pcl::PointCloud<pcl::PointXYZRGBA> pcl_cloud_kf;
 
 PointCloudMapping::PointCloudMapping(double resolution_)
 {
+    transformLocally = false;
+    testingTransform = false;
     this->resolution = resolution_;
     voxel.setLeafSize(resolution, resolution, resolution);
     this->sor.setMeanK(100);
@@ -96,9 +101,8 @@ void PointCloudMapping::insertKeyFrame(KeyFrame *kf, cv::Mat &color, cv::Mat &de
     keyFrameUpdated.notify_one();
 }
 
-pcl::PointCloud<PointCloudMapping::PointT>::Ptr PointCloudMapping::generatePointCloud(KeyFrame *kf, cv::Mat &color, cv::Mat &depth, int seqNum)
+pcl::PointCloud<PointCloudMapping::PointT>::Ptr PointCloudMapping::generatePointCloud(KeyFrame *kf, cv::Mat color, cv::Mat depth, int seqNum)
 {
-    PointCloud::Ptr tmp(new PointCloud());
     cout << "[MASK] Start generating pointcloud" << seqNum << endl;
 
     while (maskMap.find(seqNum) == maskMap.end())
@@ -110,26 +114,31 @@ pcl::PointCloud<PointCloudMapping::PointT>::Ptr PointCloudMapping::generatePoint
         newMaskArrived.wait(lck_maskArrived);
     }
 
+    PointCloud::Ptr tmp(new PointCloud());
+
     cout << "[MASK] Mask " << seqNum << " is found! " << endl;
     cv::Mat *mask = &maskMap[seqNum];
 
-    cout << "[MASK] Mask size " << mask->rows << " " << mask->cols << endl;
-    cout << "Depth size " << depth.rows << " " << depth.cols << endl;
+    double minT, maxT;
+    cv::minMaxIdx(*mask, &minT, &maxT);
+
     // Point cloud is null ptr
+    assert(depth.rows == mask->rows);
+    assert(depth.cols == mask->cols);
 
     for (int m = 0; m < depth.rows; m += 1)
     {
         for (int n = 0; n < depth.cols; n += 1)
         {
             float d = depth.ptr<float>(m)[n];
-            if (d < 0.01 || d > 9.0)
+            if (d < 0.01 || d > 2.0)
                 continue;
 
             int flag_exist = 0;
 
-            for (int i = -3; i <= 3; i++)
+            for (int i = -7; i <= 7; i++)
             {
-                for (int j = -3; j <= 3; j++)
+                for (int j = -7; j <= 7; j++)
                 {
                     int tempx = m + i;
                     int tempy = n + j;
@@ -142,7 +151,7 @@ pcl::PointCloud<PointCloudMapping::PointT>::Ptr PointCloudMapping::generatePoint
                         tempy = 0;
                     if (tempy >= (mask->cols - 1))
                         tempy = mask->cols - 1;
-                    if (mask->ptr<uint8_t>(tempx)[tempy])
+                    if (!mask->ptr<uint8_t>(tempx)[tempy])
                     {
                         flag_exist = 1;
                         break;
@@ -171,13 +180,21 @@ pcl::PointCloud<PointCloudMapping::PointT>::Ptr PointCloudMapping::generatePoint
         }
     }
 
-    Eigen::Isometry3d T = Converter::toSE3Quat(kf->GetPose());
-    PointCloud::Ptr cloud(new PointCloud);
-    pcl::transformPointCloud(*tmp, *cloud, T.inverse().matrix());
-    cloud->is_dense = false;
+    // cout << "[PCL] Generate point cloud for kf " << kf->mnId << ", size=" << cloud->points.size() << endl;
 
-    cout << "[PCL] Generate point cloud for kf " << kf->mnId << ", size=" << cloud->points.size() << endl;
-    return cloud;
+    if (transformLocally)
+    {
+        Eigen::Isometry3d T = Converter::toSE3Quat(kf->GetPose());
+        PointCloud::Ptr cloud(new PointCloud);
+        pcl::transformPointCloud(*tmp, *cloud, T.inverse().matrix());
+        cloud->is_dense = false;
+        return cloud;
+    }
+    else
+    {
+        tmp->is_dense = false;
+        return tmp;
+    }
 }
 
 void PointCloudMapping::imageMaskCallback(const sensor_msgs::ImageConstPtr &msgMask)
@@ -186,7 +203,7 @@ void PointCloudMapping::imageMaskCallback(const sensor_msgs::ImageConstPtr &msgM
     cv_bridge::CvImageConstPtr cv_ptrMask;
     try
     {
-        cv_ptrMask = cv_bridge::toCvShare(msgMask);
+        cv_ptrMask = cv_bridge::toCvShare(msgMask, "mono8");
     }
     catch (cv_bridge::Exception &e)
     {
@@ -197,7 +214,7 @@ void PointCloudMapping::imageMaskCallback(const sensor_msgs::ImageConstPtr &msgM
     int seqNum = cv_ptrMask->header.seq;
 
     cout << "[MASK] New image received with seq " << seqNum << endl;
-    maskMap[seqNum] = cv_ptrMask->image;
+    maskMap[seqNum] = cv_ptrMask->image.clone();
     newMaskArrived.notify_one();
 }
 
@@ -207,23 +224,80 @@ void PointCloudMapping::generateAndPublishPointCloud(size_t N)
     for (size_t i = lastKeyframeSize; i < N; i++)
     {
         PointCloud::Ptr p = generatePointCloud(keyframes[i], colorImgs[i], depthImgs[i], imgMasksSeq[i]);
-        *KfMap += *p;
-        *globalMap += *p;
+
+        if (transformLocally)
+        {
+            *KfMap += *p;
+            *globalMap += *p;
+
+            PointCloud::Ptr tmp1(new PointCloud());
+            voxel.setInputCloud(KfMap);
+            voxel.filter(*tmp1);
+            KfMap->swap(*tmp1);
+            pcl_cloud_kf = *KfMap;
+
+            Cloud_transform(pcl_cloud_kf, pcl_filter);
+            pcl::toROSMsg(pcl_filter, pcl_point);
+
+            pcl_point.header.frame_id = "/pointCloud";
+        }
+        else
+        {
+            PointCloud::Ptr tmp1(new PointCloud());
+            voxel.setInputCloud(p);
+            voxel.filter(*tmp1);
+            p->swap(*tmp1);
+            pcl_cloud_kf = *p;
+
+            if (testingTransform)
+            {
+                Eigen::Isometry3d T = Converter::toSE3Quat(keyframes[i]->GetPose());
+                testing_transform(pcl_cloud_kf, pcl_filter, T.inverse());
+                pcl::toROSMsg(pcl_filter, pcl_point);
+                pcl_point.header.frame_id = "/pointCloud";
+            }
+            else
+            {
+                pcl::toROSMsg(pcl_cloud_kf, pcl_point);
+                pcl_point.header.frame_id = "/pointCloudFrame";
+                Eigen::Isometry3d T = Converter::toSE3Quat(keyframes[i]->GetPose());
+                broadcastTranformMat(T.inverse());
+            }
+        }
+
+        pclPoint_pub.publish(pcl_point);
+        cout << "[PCL] Keyframe map published" << endl;
     }
 
-    PointCloud::Ptr tmp1(new PointCloud());
-    voxel.setInputCloud(KfMap);
-    voxel.filter(*tmp1);
-    KfMap->swap(*tmp1);
-    pcl_cloud_kf = *KfMap;
-
-    Cloud_transform(pcl_cloud_kf, pcl_filter);
-    pcl::toROSMsg(pcl_filter, pcl_point);
-    pcl_point.header.frame_id = "/pointCloud";
-
-    pclPoint_pub.publish(pcl_point);
     lastKeyframeSize = N;
-    cout << "[PCL] Keyframe map publish time =" << endl;
+}
+
+void PointCloudMapping::broadcastTranformMat(Eigen::Isometry3d transformation)
+{
+    static tf::TransformBroadcaster transformBroadcaster;
+
+    Eigen::Matrix4d m;
+
+    m << 0, 0, 1, 0,
+        -1, 0, 0, 0,
+        0, -1, 0, 0,
+        0, 0, 0, 1;
+
+    Eigen::Isometry3d axisTransform(m);
+    Eigen::Isometry3d finalTransform = axisTransform * transformation;
+
+    tf::Matrix3x3 rotationMat(
+        finalTransform(0, 0), finalTransform(0, 1), finalTransform(0, 2),
+        finalTransform(1, 0), finalTransform(1, 1), finalTransform(1, 2),
+        finalTransform(2, 0), finalTransform(2, 1), finalTransform(2, 2));
+
+    tf::Vector3 translationMat(
+        finalTransform(0, 3), finalTransform(1, 3), finalTransform(2, 3));
+
+    tf::Transform transform;
+    transform.setOrigin(translationMat);
+    transform.setBasis(rotationMat);
+    transformBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "/cameraToRobot", "/pointCloudFrame"));
 }
 
 void PointCloudMapping::viewer()
@@ -281,7 +355,15 @@ void PointCloudMapping::Cloud_transform(pcl::PointCloud<pcl::PointXYZRGBA> &sour
 
     m << 0, 0, 1, 0,
         -1, 0, 0, 0,
-        0, -1, 0, 0;
+        0, -1, 0, 0,
+        0, 0, 0, 1;
     Eigen::Affine3f transform(m);
+    cout << "Affine3f " << endl
+         << transform.matrix() << endl;
+
+    Eigen::Isometry3f axisTransform(m);
+    cout << "Isometry3d " << endl
+         << axisTransform.matrix() << endl;
+
     pcl::transformPointCloud(source, out, transform);
 }

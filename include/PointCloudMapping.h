@@ -54,7 +54,7 @@ class PointCloudMapping
 public:
     typedef pcl::PointXYZRGBA PointT;
     typedef pcl::PointCloud<PointT> PointCloud;
-
+    
     PointCloudMapping( double resolution_ );
     void Cloud_transform(pcl::PointCloud<pcl::PointXYZRGBA>& source, pcl::PointCloud<pcl::PointXYZRGBA>& out);
     // Inserting a keyframe updates the map once
@@ -64,9 +64,12 @@ public:
     void imageMaskCallback(const sensor_msgs::ImageConstPtr& msgMask);
     void public_cloud( pcl::PointCloud<pcl::PointXYZRGBA> &cloud_kf);
     void generateAndPublishPointCloud(size_t N);
+    void broadcastTranformMat(Eigen::Isometry3d transformation);
+    void testing_transform(pcl::PointCloud<pcl::PointXYZRGBA> &source, pcl::PointCloud<pcl::PointXYZRGBA> &out, Eigen::Isometry3d transformation);
+
 
 protected:
-    PointCloud::Ptr generatePointCloud(KeyFrame* kf, cv::Mat& color, cv::Mat& depth, int seqNum);
+    PointCloud::Ptr generatePointCloud(KeyFrame* kf, cv::Mat color, cv::Mat depth, int seqNum);
 
     PointCloud::Ptr globalMap;
 
@@ -76,7 +79,7 @@ protected:
     boost::shared_ptr<thread>  pclThread;
     std::thread  maskThread;
 
-    bool    shutDownFlag    =false;
+    bool    shutDownFlag    = false;
     std::mutex   shutDownMutex;
 
     std::condition_variable  keyFrameUpdated;
