@@ -15,6 +15,7 @@ from detr.DetrPanopticTRT import DetrPanopticTRT
 
 roslib.load_manifest('pointcloud_segmentation')
 
+PEOPLE_LABEL = 0
 
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
@@ -72,21 +73,26 @@ class ImageSegmentation:
 
         self.images_buffer.append((cv_image, data.header.seq))
 
-    def _combine_masks(self, masks, image):
+    def _combine_masks(self, masks, labels, image):
         """
-        Combine all masks into one mask and convert it to binary mask
+        Combine masks of ground areas (excluding people) into one mask and convert it to binary mask
 
         Keyword arguments:
         masks -- list of masks
+        labels -- list of labels 
         image -- input image of the masks
 
         Return:
         binary mask
         """
         if masks.any():
-            img = sigmoid(masks[:, :, 0]) * 255
+            img = np.zeros_like(masks[:, :, 0])
 
-            for i in range(1, masks.shape[2]):
+            for i in range(0, masks.shape[2]):
+                # If the segment at position i has the label people, don't add it to the mask
+                if labels[i] == PEOPLE_LABEL:
+                    continue
+
                 temp_mask = masks[:, :, i]
                 ranged_image = sigmoid(temp_mask) * 255
                 img = cv2.add(img, ranged_image)
@@ -111,11 +117,14 @@ class ImageSegmentation:
 
         Keyword arguments:
         image -- input image that needs to be segmented
+
+        Return:
+        a binary mask of all segmented masks of input image
         """
         resized_image = cv2.resize(image, (672, 376))
         self.model.execute(resized_image)
         boxes, labels, scores, masks = self.model.get_all_output()
-        return self._combine_masks(masks, image)
+        return self._combine_masks(masks, labels, image)
 
     def run_once(self):
         """
@@ -149,7 +158,7 @@ def main(args):
     image_seg = ImageSegmentation(image_sub_topic_name, mask_pub_topic_name,
                                   engine1_path, engine2_path)
 
-    rate = rospy.Rate(50) # 50Hz
+    rate = rospy.Rate(60) # 50Hz
 
     while not rospy.is_shutdown():
         image_seg.run_once()
