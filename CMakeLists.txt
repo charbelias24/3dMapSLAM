@@ -54,6 +54,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   message_generation
   tf
+  image_transport
+  cv_bridge
   )
 
 include_directories(
