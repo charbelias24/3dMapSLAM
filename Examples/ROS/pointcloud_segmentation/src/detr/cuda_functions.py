@@ -15,8 +15,8 @@ FLOOR_THRESHOLD = 0.55
 BLOCKSIZE = 256
 CLASS_COLOR_MAP = np.random.randint(0, 255, (300, 3))
 CLASS_COLOR_MAP[0] = [238,130,238] # person color
-for i in range(300):
-    CLASS_COLOR_MAP[i] = [238,130,238]
+# for i in range(300):
+#     CLASS_COLOR_MAP[i] = [238,130,238]
 
 # CLASS_COLOR_MAP[1] = [152,251,152] # floor color
 GPU_CLASS_COLOR_MAP = gpuarray.to_gpu(CLASS_COLOR_MAP.astype(np.uint8)) # uint16 == unsigned short
