@@ -1,0 +1,16 @@
+<package>
+  <description brief="pointcloud_segmentation">
+     pointcloud_segmentation
+  </description>
+  <author>visualbehavior</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="rospy"/>
+  <depend package="tf"/>
+  <depend package="sensor_msgs"/>
+  <depend package="image_transport"/>
+  <depend package="cv_bridge"/>
+</package>
+
+
+
