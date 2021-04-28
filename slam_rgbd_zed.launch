@@ -1,0 +1,23 @@
+<launch>  
+	<arg name="rgb_image_node" default="/zed/zed_node/rgb/image_rect_color"/>
+	<arg name="depth_image_node" default="/zed/zed_node/depth/depth_registered"/>
+	<arg name="zed_params_dir" default="$(find ORB_SLAM3)/../../../zed/params"/>
+	<arg name="zed_params" default="/stereo/zed-VGA.yaml"/>
+
+	<!-- Segmentation -->
+	<node pkg="pointcloud_segmentation" name="image_segmentation" type="image_segmentation.py" output="screen" />
+
+	<!-- OrbSlam3  -->
+	<node pkg="ORB_SLAM3" name="ORB_SLAM3" type="RGBD" 
+	args="$(find ORB_SLAM3)/../../../Vocabulary/ORBvoc.bin  
+	$(arg zed_params_dir)$(arg zed_params)
+	/camera/rgb/image_raw:=$(arg rgb_image_node) 
+	/camera/depth_registered/image_raw:=$(arg depth_image_node)"
+	output="screen"/>
+
+	<!-- Run other launch file -->
+    <include file="$(find ORB_SLAM3)/launch/Octomap.launch" />
+	<include file="$(find ORB_SLAM3)/launch/transform.launch" />
+	<node pkg="rviz" name="rviz" type="rviz" /> 
+	
+</launch>
