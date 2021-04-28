@@ -31,7 +31,6 @@
  *--------------------------------------------------------------------------------------------------
  */
 
-
 #ifndef POINTCLOUDMAPPING_H
 #define POINTCLOUDMAPPING_H
 
@@ -54,51 +53,49 @@ class PointCloudMapping
 public:
     typedef pcl::PointXYZRGBA PointT;
     typedef pcl::PointCloud<PointT> PointCloud;
-    
-    PointCloudMapping( double resolution_ );
-    void Cloud_transform(pcl::PointCloud<pcl::PointXYZRGBA>& source, pcl::PointCloud<pcl::PointXYZRGBA>& out);
+
+    PointCloudMapping(double resolution_);
+    void Cloud_transform(pcl::PointCloud<pcl::PointXYZRGBA> &source, pcl::PointCloud<pcl::PointXYZRGBA> &out);
     // Inserting a keyframe updates the map once
-    void insertKeyFrame( KeyFrame* kf,cv::Mat& color, cv::Mat& depth, const int seqNum);
+    void insertKeyFrame(KeyFrame *kf, cv::Mat &color, cv::Mat &depth, const int seqNum);
     void shutdown();
     void viewer();
-    void imageMaskCallback(const sensor_msgs::ImageConstPtr& msgMask);
-    void public_cloud( pcl::PointCloud<pcl::PointXYZRGBA> &cloud_kf);
+    void imageMaskCallback(const sensor_msgs::ImageConstPtr &msgMask);
+    void public_cloud(pcl::PointCloud<pcl::PointXYZRGBA> &cloud_kf);
     void generateAndPublishPointCloud(size_t N);
     void broadcastTranformMat(Eigen::Isometry3d transformation);
-    void testing_transform(pcl::PointCloud<pcl::PointXYZRGBA> &source, pcl::PointCloud<pcl::PointXYZRGBA> &out, Eigen::Isometry3d transformation);
-
 
 protected:
-    PointCloud::Ptr generatePointCloud(KeyFrame* kf, cv::Mat color, cv::Mat depth, int seqNum);
+    PointCloud::Ptr generatePointCloud(KeyFrame *kf, cv::Mat color, cv::Mat depth, int seqNum);
 
     PointCloud::Ptr globalMap;
 
     PointCloud::Ptr KfMap;
-    boost::shared_ptr<thread>  viewerThread;
-    boost::shared_ptr<thread>  maskSubsThread;
-    boost::shared_ptr<thread>  pclThread;
-    std::thread  maskThread;
+    boost::shared_ptr<thread> viewerThread;
+    boost::shared_ptr<thread> maskSubsThread;
+    boost::shared_ptr<thread> pclThread;
+    std::thread maskThread;
 
-    bool    shutDownFlag    = false;
-    std::mutex   shutDownMutex;
+    bool shutDownFlag = false;
+    std::mutex shutDownMutex;
 
-    std::condition_variable  keyFrameUpdated;
-    std::condition_variable  newMaskArrived;
-    std::mutex               keyFrameUpdateMutex;
+    std::condition_variable keyFrameUpdated;
+    std::condition_variable newMaskArrived;
+    std::mutex keyFrameUpdateMutex;
 
     // Data to generate point clouds
-    std::map<int, cv::Mat>       maskMap;
-    std::vector<KeyFrame*>       keyframes;
-    std::vector<cv::Mat>         colorImgs;
-    std::vector<cv::Mat>         depthImgs;
-    std::vector<cv::Mat>         imgMasks;
-    std::vector<int>             imgMasksSeq;
-    std::mutex                   keyframeMutex;
-    std::mutex                   maskMutex;
-    uint16_t                lastKeyframeSize =0;
+    std::map<int, cv::Mat> maskMap;
+    std::vector<KeyFrame *> keyframes;
+    std::vector<cv::Mat> colorImgs;
+    std::vector<cv::Mat> depthImgs;
+    std::vector<cv::Mat> imgMasks;
+    std::vector<int> imgMasksSeq;
+    std::mutex keyframeMutex;
+    std::mutex maskMutex;
+    uint16_t lastKeyframeSize = 0;
 
     double resolution = 0.005;
-    pcl::VoxelGrid<PointT>  voxel;
+    pcl::VoxelGrid<PointT> voxel;
     pcl::StatisticalOutlierRemoval<PointT> sor;
 };
 
