@@ -95,7 +95,7 @@ chmod +x publish_images_zed.sh
 This executes ZED Wrapper that publishes images from SVO files or from live ZED camera
 
 Possible arguments: 
-1. First argument is the camera model: `zed` `zed-vga` `zed2` `zedm`
+1. First argument is the camera model: `zed` `zed2` `zedm`
 2. Second argument is the SVO file path, if not provided, images from the connected camera will be published
 
 
