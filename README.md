@@ -1,7 +1,7 @@
-# ORB-SLAM3 with Ground Map Creation
+# ORB-SLAM3 with Segmented 3D Map Construction 
 
 ## 1. Description
-The purpose of this software is to use SLAM with RGB-D in order to create a map of its surroundings, with a possibility to generate a map of the ground only using DETR image segmentation, all in real-time.
+The purpose of this software is to use SLAM with RGB-D images in order to create a 3D colored map of the surroundings, with a possibility of generating a map of the ground only while removing people, objects, etc. by segmenting the frames and adding the chosen masks to the 3D map. The code is modular making it easy to use another image segmentation model to remove or add any object to the 3D map. 
 
 It is mainly based on [ORB-SLAM3](https://github.com/UZ-SLAMLab/ORB_SLAM3), and we took a similar approach of generating the map from [DS-SLAM](https://github.com/ivipsourcecode/DS-SLAM) using [OctoMap](https://octomap.github.io/). The image segmentation for floor detection is based on [DETR: End-to-End Object Detection with Transformers](https://github.com/facebookresearch/detr). ZED cameras and SVO pre-recorded video were used for demonstration. 
 
@@ -15,20 +15,32 @@ We tested the software on **Ubuntu 18.04** with a computer running on **Intel i7
 ### 2.1. ORB-SLAM3
 Install all ORB-SLAM3 prerequisites [ORB-SLAM3](https://github.com/UZ-SLAMLab/ORB_SLAM3)
 
-**IMPORTANT NOTE:** Download **Eigen3.2.x** and **OpenCV3.x** instead of the newer versions. Newer versions may have compability issues. 
+**IMPORTANT NOTE:** Download **Eigen3.2.x** and **OpenCV3.x** instead of the newer versions. Newer versions may have compability issues. You may have to build and compile OpenCV3.x locally: [Installing OpenCV3](https://www.pyimagesearch.com/2018/05/28/ubuntu-18-04-how-to-install-opencv/)
 
 We used the binary of the ORB Vocabulary instead of the text for faster execution startup. Unzip the `ORBvoc.zip` in the `Vocabulary` directory, and name it `ORBvoc.bin` 
 
 
 ### 2.2. ROS
-Tested on ROS-MELODIC. 
+Tested on ROS-MELODIC: [http://wiki.ros.org/melodic/Installation/Ubuntu](http://wiki.ros.org/melodic/Installation/Ubuntu)
 
 For image segmentation, we need **Python3**. Since ROS' default python is Python2, we need to add support to Python3.
+
 Follow this article: [How to setup ROS with Python3](https://medium.com/@beta_b0t/how-to-setup-ros-with-python-3-44a69ca36674)
 
+This is an example of how `.bashrc` or `.zshrc` should look like:
+```
+source /home/${USER}/catkin_ws/devel/setup.zsh
+source /home/${USER}/catkin_build_ws/install/setup.zsh
+source /home/${USER}/catkin_build_ws/devel/setup.zsh
+export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:/home/${USER}/Documents/SLAM/ORB_SLAM3/Examples/ROS
+```
+
+`catkin_ws` is the recommended ROS directory. 
+`catkin_build_ws` is the  
 
 ### 2.3. CUDA, cuDNN, and TensorRT
 Tested on CUDA 11.2, cuDNN 8.1.1, TensorRT 7.2.2.
+
 Follow this artice: [Setting up your NVIDIA environment](https://blog.jeremarc.com/setup/nvidia/cuda/linux/2020/09/19/nvidia-cuda-setup.html)
 
 
@@ -77,7 +89,6 @@ In order to run the software:
 ```
 chmod +x slam_rgbd_zed_ros.sh
 ./slam_rgbd_zed_ros.sh zed
-
 ```
 The first argument is the camera model, with the resolution (default is HD) 
 Possible arguments are: `zed` `zed-vga` `zed2` `zedm`
@@ -100,7 +111,7 @@ Possible arguments:
 
 
 ## 5. How it works
-ROS is used to create multiple nodes
+The software is made up of 6 different nodes running in parallel:
 
 
 ### 5.1. ZED
@@ -112,6 +123,8 @@ The ZED camera configurations and parameters (`.yaml` files) are located in `zed
 Responsible for segmenting the RGB images from ZED, and creating a mask based on the segmentations. Then, publishes the mask to a new ROS topic.
 Note that the current implmentation creates a mask of the ground. This can be easily modified to create a mask of people, etc...
 The code is located in `Examples/ROS/pointcloud_segmentation`
+You can easily use another model by creating a similar node, making sure that you are publishing a mask of the areas to be added to the pointcloud.
+
 
 ### 5.3. SLAM + PointCloud 
 1. Runs the official ORB-SLAM3 based on RGB-D input images
