@@ -7,7 +7,7 @@ then
 elif [[ "$1" == "zed-vga" ]] 
 then
 	echo "Launching SLAM with ZED VGA camera"
-	roslaunch slam_rgbd_zed.launch zed_params:=/stereo/zed_VGA.yaml
+	roslaunch slam_rgbd_zed.launch zed_params:=/stereo/zed-VGA.yaml
 elif [[ "$1" == "zed2" ]] 
 then
 	echo "Launching SLAM with ZED2 HD camera"
