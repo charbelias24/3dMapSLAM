@@ -1,9 +1,15 @@
 # ORB-SLAM3 with Segmented 3D Map Construction 
 
 ## 1. Description
-The purpose of this software is to use SLAM with RGB-D images in order to create a 3D colored map of the surroundings, with a possibility of generating a map of the ground only while removing people, objects, etc. by segmenting the frames and adding the chosen masks to the 3D map. The code is modular making it easy to use another image segmentation model to remove or add any object to the 3D map. 
+The purpose of this software is to use SLAM with RGB-D images in order to create a 3D colored map of the surroundings, with a possibility of adding and removing static and moving objects, people, floor, etc. by using image segmentation and filtering the pointcloud accordingly. 
 
-It is mainly based on [ORB-SLAM3](https://github.com/UZ-SLAMLab/ORB_SLAM3), and we took a similar approach of generating the map from [DS-SLAM](https://github.com/ivipsourcecode/DS-SLAM) using [OctoMap](https://octomap.github.io/). The image segmentation for floor detection is based on [DETR: End-to-End Object Detection with Transformers](https://github.com/facebookresearch/detr). ZED cameras and SVO pre-recorded video were used for demonstration. 
+We present an example of constructing a map of the free space on the ground by removing static and moving objects, people, etc. The generated map allows a robot to move freely in this free space.
+
+The code is modular making it easy to use another image segmentation model to remove or add any object to the 3D map. 
+
+It is mainly based on [ORB-SLAM3](https://github.com/UZ-SLAMLab/ORB_SLAM3), and we added the map creation using [OctoMap](https://octomap.github.io/) similary to [DS-SLAM](https://github.com/ivipsourcecode/DS-SLAM). The image segmentation is based on [DETR: End-to-End Object Detection with Transformers](https://github.com/facebookresearch/detr). 
+
+ZED cameras and SVO pre-recorded video were used for demonstration. 
 
 We use ROS with Python and C++ to combine different modules easily.
 
