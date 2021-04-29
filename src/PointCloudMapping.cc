@@ -31,16 +31,16 @@
  *--------------------------------------------------------------------------------------------------
  */
 
+#include "PointCloudMapping.h"
+#include "sensor_msgs/PointCloud2.h"
+
 #include <iostream>
 #include <algorithm>
 #include <fstream>
 #include <chrono>
 #include <thread>
 
-#include "PointCloudMapping.h"
-
 #include <ros/ros.h>
-#include "sensor_msgs/PointCloud2.h"
 #include <tf/transform_broadcaster.h>
 #include <boost/thread/thread.hpp>
 #include <boost/chrono.hpp>
@@ -56,13 +56,9 @@
 
 using namespace std;
 
-pcl::PointCloud<pcl::PointXYZRGBA> pcl_filter;
-ros::Publisher pclPoint_pub;
-ros::Publisher octomap_pub;
-ros::Subscriber segmented_sub;
-sensor_msgs::PointCloud2 pcl_point;
-
-pcl::PointCloud<pcl::PointXYZRGBA> pcl_cloud_kf;
+ros::Publisher pclPub;
+ros::Subscriber maskSub;
+sensor_msgs::PointCloud2 pclPoint;
 
 PointCloudMapping::PointCloudMapping(double resolution_)
 {
@@ -91,7 +87,6 @@ void PointCloudMapping::insertKeyFrame(KeyFrame *kf, cv::Mat &color, cv::Mat &de
     colorImgs.push_back(color.clone());
     depthImgs.push_back(depth.clone());
     imgMasksSeq.push_back(seqNum);
-    cout << "[PCL] Updated keyframe " << endl;
     keyFrameUpdated.notify_one();
 }
 
@@ -101,11 +96,11 @@ pcl::PointCloud<PointCloudMapping::PointT>::Ptr PointCloudMapping::generatePoint
 
     while (maskMap.find(seqNum) == maskMap.end())
     {
-        // Mask not found
+        // Mask with seq number not found
         // Wait until the mask with the same sequence number
         cout << "[PCL][MASK] Wait, mask " << seqNum << " is not found yet" << endl;
-        unique_lock<mutex> lck_maskArrived(maskMutex);
-        newMaskArrived.wait(lck_maskArrived);
+        unique_lock<mutex> lckMaskArrived(maskMutex);
+        newMaskArrived.wait(lckMaskArrived);
     }
 
     cout << "[PCL][MASK] Mask " << seqNum << " is found! " << endl;
@@ -126,9 +121,9 @@ pcl::PointCloud<PointCloudMapping::PointT>::Ptr PointCloudMapping::generatePoint
             if (d < 0.01 || d > MAX_POINTCLOUD_DEPTH)
                 continue;
 
-            // If the flag_exists is true, do not add the points to the point cloud
-            bool flag_exist = false;
-            int windowSize = 7;
+            // If the flagExistss is true, do not add the points to the point cloud
+            bool flagExists = false;
+            int windowSize = 9;
             for (int i = -windowSize; i <= windowSize; i++)
             {
                 for (int j = -windowSize; j <= windowSize; j++)
@@ -144,17 +139,18 @@ pcl::PointCloud<PointCloudMapping::PointT>::Ptr PointCloudMapping::generatePoint
                         tempy = 0;
                     if (tempy >= (mask->cols - 1))
                         tempy = mask->cols - 1;
+
                     if (!mask->ptr<uint8_t>(tempx)[tempy])
                     {
-                        flag_exist = true;
+                        flagExists = true;
                         break;
                     }
                 }
-                if (flag_exist)
+                if (flagExists)
                     break;
             }
 
-            if (flag_exist)
+            if (flagExists)
                 continue;
 
             PointT p;
@@ -192,8 +188,6 @@ void PointCloudMapping::imageMaskCallback(const sensor_msgs::ImageConstPtr &msgM
     }
 
     int seqNum = cv_ptrMask->header.seq;
-
-    // cout << "[PCL][MASK] New image received with seq " << seqNum << endl;
     maskMap[seqNum] = cv_ptrMask->image.clone();
     newMaskArrived.notify_one();
 }
@@ -207,14 +201,13 @@ void PointCloudMapping::generateAndPublishPointCloud(size_t N)
         voxel.setInputCloud(p);
         voxel.filter(*tmp1);
         p->swap(*tmp1);
-        pcl_cloud_kf = *p;
 
-        pcl::toROSMsg(pcl_cloud_kf, pcl_point);
-        pcl_point.header.frame_id = "/pointCloudFrame";
+        pcl::toROSMsg(*p, pclPoint);
+        pclPoint.header.frame_id = "/pointCloudFrame";
         Eigen::Isometry3d T = Converter::toSE3Quat(keyframes[i]->GetPose());
         broadcastTranformMat(T.inverse());
 
-        pclPoint_pub.publish(pcl_point);
+        pclPub.publish(pclPoint);
         cout << "[PCL] Pointcloud of seq " << imgMasksSeq[i] << " published" << endl;
     }
 
@@ -236,7 +229,7 @@ void PointCloudMapping::broadcastTranformMat(Eigen::Isometry3d cameraPose)
     // Apply axis transformation to the camera pose
     Eigen::Isometry3d finalTransform = axisTransform * cameraPose;
 
-    // Manually create the rotation and translation matrices based on the final transform 
+    // Manually create the rotation and translation matrices based on the final transform
     // in the shape of 4x4 [R T]
     tf::Matrix3x3 rotationMat(
         finalTransform(0, 0), finalTransform(0, 1), finalTransform(0, 2),
@@ -257,23 +250,23 @@ void PointCloudMapping::broadcastTranformMat(Eigen::Isometry3d cameraPose)
 void PointCloudMapping::viewer()
 {
     ros::NodeHandlePtr n = boost::make_shared<ros::NodeHandle>();
-    pclPoint_pub = n->advertise<sensor_msgs::PointCloud2>("/slam_pointclouds", 100000);
-    segmented_sub = n->subscribe<sensor_msgs::Image>("/pointcloud_segmentation/image_mask", 1000,
-                                                     boost::bind(&PointCloudMapping::imageMaskCallback, this, _1));
+    pclPub = n->advertise<sensor_msgs::PointCloud2>("/slam_pointclouds", 100000);
+    maskSub = n->subscribe<sensor_msgs::Image>("/pointcloud_segmentation/image_mask", 1000,
+                                               boost::bind(&PointCloudMapping::imageMaskCallback, this, _1));
 
     while (ros::ok())
     {
         cout << "[PCL] Starting the PCL" << endl;
         {
-            unique_lock<mutex> lck_shutdown(shutDownMutex);
+            unique_lock<mutex> lckShutdown(shutDownMutex);
             if (shutDownFlag)
             {
                 break;
             }
         }
         {
-            unique_lock<mutex> lck_keyframeUpdated(keyFrameUpdateMutex);
-            keyFrameUpdated.wait(lck_keyframeUpdated);
+            unique_lock<mutex> lckKeyframeUpdated(keyFrameUpdateMutex);
+            keyFrameUpdated.wait(lckKeyframeUpdated);
         }
 
         size_t N = 0;
@@ -287,7 +280,7 @@ void PointCloudMapping::viewer()
             usleep(1000);
             continue;
         }
-        
+
         pclThread = boost::make_shared<thread>(boost::bind(&PointCloudMapping::generateAndPublishPointCloud, this, _1), N);
         pclThread->join();
     }

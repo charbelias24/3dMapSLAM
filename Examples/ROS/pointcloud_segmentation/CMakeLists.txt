@@ -52,31 +52,21 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   )
 
-include_directories(
-${PROJECT_SOURCE_DIR}
-${PCL_INCLUDE_DIRS}
-${catkin_INCLUDE_DIRS}
-)
+# include_directories(
+# ${PROJECT_SOURCE_DIR}
+# ${PCL_INCLUDE_DIRS}
+# ${catkin_INCLUDE_DIRS}
+# )
 
 set(CATKIN_PACKAGE_BIN_DESTINATION ${PROJECT_SOURCE_DIR}/bin)
 catkin_install_python(PROGRAMS src/image_segmentation.py
 DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-set(LIBS 
-${OpenCV_LIBS} 
-${EIGEN3_LIBS}
-${PCL_LIBRARIES}
-${catkin_LIBRARIES}
--lboost_system
-)
-
-# Node for PointCloud Filtering
-rosbuild_add_executable(pointcloud_filtering
-src/pointcloud_filtering.cc
-)
-
-target_link_libraries(pointcloud_filtering
-${LIBS}
-)
-
+# set(LIBS 
+# ${OpenCV_LIBS} 
+# ${EIGEN3_LIBS}
+# ${PCL_LIBRARIES}
+# ${catkin_LIBRARIES}
+# -lboost_system
+# )
