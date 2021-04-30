@@ -23,7 +23,7 @@
 *This project was part of a robotics software engineering internship at [Visual Behavior](https://visualbehavior.ai/) - April 2021.*
 
 ## 1. Description
-The purpose of this software is to use SLAM with RGB-D images to create a 3D colored map of the surroundings, with a possibility of adding and removing static and moving objects, people, floor, etc. by using image segmentation and filtering the point cloud accordingly.
+The purpose of this software is to use SLAM with RGB-D images to create a 3D colored map of the surroundings, with a possibility of adding and removing static and moving objects, people, floor, etc. by using image segmentation and filtering the 3D map accordingly.
 
 We present an example of constructing a map of the free space on the ground by removing static and moving objects, people, etc. The generated map allows a robot to move freely in this free space. ZED cameras and SVO pre-recorded video were used for demonstration. We used ROS with Python and C++ to combine different modules easily.
 
