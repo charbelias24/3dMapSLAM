@@ -20,7 +20,7 @@
     - [5.6. RVIZ](#56-rviz)
   - [6. Significant files](#6-significant-files)
 
-This project was part of a robotics software engineering internship at [Visual Behavior](https://visualbehavior.ai/)
+*This project was part of a robotics software engineering internship at [Visual Behavior](https://visualbehavior.ai/).*
 
 ## 1. Description
 The purpose of this software is to use SLAM with RGB-D images to create a 3D colored map of the surroundings, with a possibility of adding and removing static and moving objects, people, floor, etc. by using image segmentation and filtering the point cloud accordingly.
@@ -135,12 +135,16 @@ The software is made up of 6 different nodes running in parallel:
 Responsible for taking images from either a camera or an SVO video and publishing the images to a ROS topic.
 
 The ZED camera configurations and parameters (`.yaml` files) are located in `zed/params/`
+
 ### 5.2. Segmentation
 Responsible for segmenting the RGB images from ZED, and creating a mask based on the segmentations. Then, publishes the mask to a new ROS topic.
 Note that the current implementation creates a mask of the ground. This can be easily modified to create a mask of people, etc...
-The code is located in `Examples/ROS/pointcloud_segmentation`
+The code is located in `Examples/ROS/pointcloud_segmentation`. 
 
 You can easily use another model by creating a similar node, making sure that you are publishing a mask of the areas to be added to the point cloud.
+
+*For confidential purposes, the class responsible for DETR and segmentation has been removed from the public repo.*
+
 ### 5.3. SLAM + PointCloud
 1. Runs the official ORB-SLAM3 based on RGB-D input images
 2. Additional PointCloudMapper responsible for creating and publishing the point clouds.
