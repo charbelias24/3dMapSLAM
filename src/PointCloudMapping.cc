@@ -123,10 +123,14 @@ pcl::PointCloud<PointCloudMapping::PointT>::Ptr PointCloudMapping::generatePoint
 
             // If the flagExistss is true, do not add the points to the point cloud
             bool flagExists = false;
-            int windowSize = 9;
-            for (int i = -windowSize; i <= windowSize; i++)
+
+            // The windowSize is a box of around the point (m, n) in the mask  
+            // If any point in the box is not included in the mask, do no add the point (m, n) 
+            // to the pointcloud
+            int windowSize = 20;
+            for (int i = -windowSize / 2; i <= windowSize / 2; i++)
             {
-                for (int j = -windowSize; j <= windowSize; j++)
+                for (int j = -windowSize / 2; j <= windowSize / 2; j++)
                 {
                     int tempx = m + i;
                     int tempy = n + j;
