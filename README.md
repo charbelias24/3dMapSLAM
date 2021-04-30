@@ -20,7 +20,7 @@
     - [5.6. RVIZ](#56-rviz)
   - [6. Significant files](#6-significant-files)
 
-*This project was part of a robotics software engineering internship at [Visual Behavior](https://visualbehavior.ai/).*
+*This project was part of a robotics software engineering internship at [Visual Behavior](https://visualbehavior.ai/) - April 2021.*
 
 ## 1. Description
 The purpose of this software is to use SLAM with RGB-D images to create a 3D colored map of the surroundings, with a possibility of adding and removing static and moving objects, people, floor, etc. by using image segmentation and filtering the point cloud accordingly.
