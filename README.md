@@ -10,6 +10,7 @@
     - [2.5. ZED (Optional)](#25-zed-optional)
   - [3. How to build](#3-how-to-build)
   - [4. How to run](#4-how-to-run)
+    - [Additional notes](#additional-notes)
   - [5. How it works](#5-how-it-works)
     - [5.1. ZED](#51-zed)
     - [5.2. Segmentation](#52-segmentation)
@@ -96,9 +97,10 @@ This targets the directory `Examples/ROS/ORB_SLAM3` and `Examples/ROS/pointcloud
 
 Note: In `build_ros.sh`, you may have to change the path of Python3 paths (`PYTHON_EXECUTABLE`, `PYTHON_INCLUDE_DIR`, `PYTHON_LIBRARY`) mentioned in the article [How to setup ROS with Python3](https://medium.com/@beta_b0t/how-to-setup-ros-with-python-3-44a69ca36674)
 ## 4. How to run
-To run the software:
-1. Run `roscore` in one terminal
-2. In another terminal
+To run the software, you need to run `roscore` (optional) and 2 different bash files: 
+1. Run `roscore` in one terminal (optional)
+2. In another terminal, execute the `slam_rgbd_zed_ros.sh` file. This executes a ROS launch file `slam_rgbd_zed.launch` with different parameters depending on the ZED camera model.
+This ROS launch files runs the ROS Nodes: ORB-SLAM3, ImageSegmentation, OctoMap, Transformations, and RVIZ.
 ```
 chmod +x slam_rgbd_zed_ros.sh
 ./slam_rgbd_zed_ros.sh zed
@@ -107,22 +109,24 @@ The first argument is the camera model, with the resolution (default is HD)
 
 Possible arguments are: `zed` `zed-vga` `zed2` `zedm`
 
-This executes a ROS launch file `slam_rgbd_zed.launch` with different parameters depending on the ZED camera model.
-
-It runs the ROS Nodes: ORB-SLAM3, ImageSegmentation, OctoMap, Transformations, and RVIZ.
-
-In RVIZ, add the `ColorOccupancyGrid` in `octomap_rviz_plugins`, and subscribe to the topic `/octomap_full`. You should see the colored octomap being constructed in real-time. You can display the color of the cell based on the original color, depth, and probability in `Voxel Coloring`.
-3. In another terminal
+1. In another terminal, we need to execute the bash file responsible of publishing images from ZED or SVO files to ROS topics. 
 ```
 chmod +x publish_images_zed.sh
 ./publish_images_zed.sh zed  # for a connected zed camera with live images
 ./publish_images_zed.sh zed2 svo_file_path.svo  # for an SVO video recorded with a ZED2 camera
 ```
-This executes ZED Wrapper that publishes images from SVO files or live ZED camera
-
 Possible arguments:
 1. First argument is the camera model: `zed` `zed2` `zedm`
 2. Second argument is the SVO file path, if not provided, images from the connected camera will be published
+
+
+### Additional notes
+Order of execution: the order of execution of the bash files doesn't matter, because each one will wait for the other to proceed.
+
+After executing the `slam_rgbd_zed_ros.sh`, 3 new windows should open: image viewer of the current frame, viewer of the trajectory and keyframes, and RVIZ.
+
+Visualizing the OctoMap on RVIZ: in RVIZ, add the `ColorOccupancyGrid` in `octomap_rviz_plugins`, and subscribe to the topic `/octomap_full`. You should see the colored octomap being constructed in real-time. You can display the color of the cell based on the original color, depth, and probability in `Voxel Coloring`.
+
 ## 5. How it works
 The software is made up of 6 different nodes running in parallel:
 ### 5.1. ZED
@@ -166,17 +170,19 @@ Make sure that both point cloud and octomap have the same resolution.
 ### 5.6. RVIZ
 Responsible for visualization of the point clouds and the octomap.
 ## 6. Significant files
+- For Main Launch File:
+  - `./slam_rgbd_zed.launch`
 - For ORB-SLAM3:
-  - `/src/System.cc`
-  - `/src/Tracking.cc`
-  - `/Examples/ROS/ORB_SLAM3/src/ros_rgbd.cc`
+  - `./src/System.cc`
+  - `./src/Tracking.cc`
+  - `./Examples/ROS/ORB_SLAM3/src/ros_rgbd.cc`
 - For PointCloud, Segmentation and Transformations:
-  - `/src/PointCloudMapping.cc`
-  - `/Examples/ROS/pointcloud_segmentation/src/image_segmentation.py`
-  - `/Examples/ROS/ORB_SLAM3/launch/transform.launch`
+  - `./src/PointCloudMapping.cc`
+  - `./Examples/ROS/pointcloud_segmentation/src/image_segmentation.py`
+  - `./Examples/ROS/ORB_SLAM3/launch/transform.launch`
 - For Octomap:
-  - `/Examples/ROS/ORB_SLAM3/launch/octomap.launch`
-  - `/catkin_ws/src/octomap_mapping/octomap_server/src/OctomapServer.cpp`
+  - `./Examples/ROS/ORB_SLAM3/launch/octomap.launch`
+  - `/home/${USER}/catkin_ws/src/octomap_mapping/octomap_server/src/OctomapServer.cpp`
 - For ZED configurations:
-  - `/zed/params`
+  - `./zed/params`
 
