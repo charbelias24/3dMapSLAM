@@ -16,7 +16,7 @@
 	output="screen"/>
 
 	<!-- Run other launch file -->
-    <include file="$(find ORB_SLAM3)/launch/Octomap.launch" />
+    <include file="$(find ORB_SLAM3)/launch/octomap.launch" />
 	<include file="$(find ORB_SLAM3)/launch/transform.launch" />
 	<node pkg="rviz" name="rviz" type="rviz" /> 
 	
